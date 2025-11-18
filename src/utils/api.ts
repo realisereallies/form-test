@@ -178,9 +178,12 @@ export async function fetchWarehouses(token: string) {
 }
 
 export async function fetchPayboxes(token: string) {
-  const response = await fetch(`${API_BASE}/payboxes?token=${token}`);
+  const url = `${API_BASE}/payboxes?token=${token}`;
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error('Ошибка загрузки счетов');
+    const errorText = await response.text().catch(() => '');
+    console.error(`Ошибка загрузки счетов: ${response.status} ${response.statusText}`, { url, errorText });
+    throw new Error(`Ошибка загрузки счетов: ${response.status} ${response.statusText}`);
   }
   return response.json();
 }
@@ -194,9 +197,12 @@ export async function fetchOrganizations(token: string) {
 }
 
 export async function fetchPriceTypes(token: string) {
-  const response = await fetch(`${API_BASE}/price_types/?token=${token}`);
+  const url = `${API_BASE}/price_types/?token=${token}`;
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error('Ошибка загрузки типов цен');
+    const errorText = await response.text().catch(() => '');
+    console.error(`Ошибка загрузки типов цен: ${response.status} ${response.statusText}`, { url, errorText });
+    throw new Error(`Ошибка загрузки типов цен: ${response.status} ${response.statusText}`);
   }
   return response.json();
 }
@@ -205,9 +211,12 @@ export async function fetchNomenclature(query: string, token: string) {
   const searchParam = query.trim()
     ? `?search=${encodeURIComponent(query.trim())}&token=${token}`
     : `?token=${token}`;
-  const response = await fetch(`${API_BASE}/nomenclature${searchParam}`);
+  const url = `${API_BASE}/nomenclature${searchParam}`;
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error('Ошибка загрузки номенклатуры');
+    const errorText = await response.text().catch(() => '');
+    console.error(`Ошибка загрузки номенклатуры: ${response.status} ${response.statusText}`, { url, errorText });
+    throw new Error(`Ошибка загрузки номенклатуры: ${response.status} ${response.statusText}`);
   }
   return response.json();
 }

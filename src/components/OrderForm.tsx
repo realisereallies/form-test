@@ -74,7 +74,8 @@ export default function OrderForm() {
           id: item.id || item.pk || 0,
           name: item.name || item.title || String(item.id || item.pk || ''),
         })));
-      } catch {
+      } catch (error) {
+        console.error('Ошибка загрузки счетов:', error);
       }
 
       try {
@@ -84,7 +85,8 @@ export default function OrderForm() {
           id: item.id || item.pk || 0,
           name: item.short_name || item.full_name || item.name || String(item.id || item.pk || ''),
         })));
-      } catch {
+      } catch (error) {
+        console.error('Ошибка загрузки организаций:', error);
       }
 
       try {
@@ -94,7 +96,8 @@ export default function OrderForm() {
           id: item.id || item.pk || 0,
           name: item.name || item.title || String(item.id || item.pk || ''),
         })));
-      } catch {
+      } catch (error) {
+        console.error('Ошибка загрузки складов:', error);
       }
 
       try {
@@ -104,7 +107,8 @@ export default function OrderForm() {
           id: item.id || item.pk || 0,
           name: item.name || item.title || String(item.id || item.pk || ''),
         })));
-      } catch {
+      } catch (error) {
+        console.error('Ошибка загрузки типов цен:', error);
       }
 
     };
@@ -198,7 +202,8 @@ export default function OrderForm() {
         })
         .filter(Boolean) as ProductWithPrice[];
       setProducts(mapped);
-    } catch {
+    } catch (error) {
+      console.error('Ошибка загрузки товаров:', error);
       setProducts([]);
     } finally {
       setLoadingProducts(false);
