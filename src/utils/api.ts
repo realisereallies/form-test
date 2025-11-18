@@ -19,17 +19,9 @@ function phoneMatches(searchPhone: string, contragentPhone: string | null | unde
   const normalizedContragent = normalizePhone(contragentPhone);
   
   if (normalizedContragent === normalizedSearch) return true;
-<<<<<<< HEAD
-
-  if (normalizedSearch.startsWith('7') && normalizedContragent === normalizedSearch.substring(1)) return true;
-  if (normalizedContragent.startsWith('7') && normalizedSearch === normalizedContragent.substring(1)) return true;
-
-=======
   
   if (normalizedSearch.startsWith('7') && normalizedContragent === normalizedSearch.substring(1)) return true;
   if (normalizedContragent.startsWith('7') && normalizedSearch === normalizedContragent.substring(1)) return true;
-  
->>>>>>> 1b77ed7 (fix: use real contragent search)
   if (normalizedSearch.length >= 10 && normalizedContragent.length >= 10) {
     if (normalizedSearch.slice(-10) === normalizedContragent.slice(-10)) return true;
   }
@@ -39,7 +31,6 @@ function phoneMatches(searchPhone: string, contragentPhone: string | null | unde
 
 export async function searchClient(phone: string, token: string) {
   const cleanPhone = phone.replace(/\D/g, '');
-<<<<<<< HEAD
   
   const searchVariants = [
     cleanPhone,
@@ -94,22 +85,6 @@ export async function searchClient(phone: string, token: string) {
   }
   
   return [];
-=======
-  const response = await fetch(
-    `${API_BASE}/contragents?search=${encodeURIComponent(cleanPhone)}&token=${token}`
-  );
-  if (!response.ok) {
-    throw new Error('Ошибка поиска клиента');
-  }
-  const data = await response.json();
-  const clientsData = Array.isArray(data) ? data : (data?.result || data?.results || []);
-  
-  const matchedClients = clientsData.filter((client: { phone?: string | null }) => 
-    phoneMatches(phone, client.phone)
-  );
-  
-  return matchedClients.length > 0 ? matchedClients : [];
->>>>>>> 1b77ed7 (fix: use real contragent search)
 }
 
 export async function fetchSales(token: string) {
@@ -139,9 +114,6 @@ export async function createSale(payload: {
   contragent_name?: string;
 }, token: string) {
   const requestBody = [payload];
-
-  console.log('Тело запроса на сервер:', JSON.stringify(requestBody, null, 2));
-  console.log('URL:', `${API_BASE}/docs_sales/?token=${token}`);
 
   const response = await fetch(`${API_BASE}/docs_sales/?token=${token}`, {
     method: 'POST',
@@ -241,54 +213,6 @@ export async function fetchNomenclature(query: string, token: string) {
     const errorText = await response.text().catch(() => '');
     console.error(`Ошибка загрузки номенклатуры: ${response.status} ${response.statusText}`, { url, errorText });
     throw new Error(`Ошибка загрузки номенклатуры: ${response.status} ${response.statusText}`);
-  }
-  return response.json();
-}
-
-export async function fetchPayboxes(token: string) {
-  const url = `${API_BASE}/payboxes/?token=${token}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '');
-    console.error(`Ошибка загрузки счетов: ${response.status} ${response.statusText}`, { url, errorText });
-    throw new Error(`Ошибка загрузки счетов: ${response.status} ${response.statusText}`);
-  }
-  const data = await response.json();
-  console.log('Данные счетов от API:', data);
-  return data;
-}
-
-export async function fetchOrganizations(token: string) {
-  const response = await fetch(`${API_BASE}/organizations/?token=${token}`);
-  if (!response.ok) {
-    throw new Error('Ошибка загрузки организаций');
-  }
-  return response.json();
-}
-
-export async function fetchWarehouses(token: string) {
-  const response = await fetch(`${API_BASE}/warehouses/?token=${token}`);
-  if (!response.ok) {
-    throw new Error('Ошибка загрузки складов');
-  }
-  return response.json();
-}
-
-export async function fetchPriceTypes(token: string) {
-  const response = await fetch(`${API_BASE}/price_types/?token=${token}`);
-  if (!response.ok) {
-    throw new Error('Ошибка загрузки типов цен');
-  }
-  return response.json();
-}
-
-export async function fetchNomenclature(query: string, token: string) {
-  const searchParam = query.trim()
-    ? `?search=${encodeURIComponent(query.trim())}&token=${token}`
-    : `?token=${token}`;
-  const response = await fetch(`${API_BASE}/nomenclature${searchParam}`);
-  if (!response.ok) {
-    throw new Error('Ошибка загрузки номенклатуры');
   }
   return response.json();
 }

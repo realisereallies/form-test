@@ -3,15 +3,9 @@ import { useStore } from '../store/store';
 import {
   searchClient,
   createSale,
-<<<<<<< HEAD
-  fetchWarehouses,
-  fetchPayboxes,
-  fetchOrganizations,
-=======
   fetchPayboxes,
   fetchOrganizations,
   fetchWarehouses,
->>>>>>> 1b77ed7 (fix: use real contragent search)
   fetchPriceTypes,
   fetchNomenclature,
 } from '../utils/api';
@@ -116,10 +110,6 @@ export default function OrderForm() {
       } catch (error) {
         console.error('Ошибка загрузки типов цен:', error);
       }
-<<<<<<< HEAD
-
-=======
->>>>>>> 1b77ed7 (fix: use real contragent search)
     };
 
     loadData();
@@ -132,13 +122,8 @@ export default function OrderForm() {
     setClientError('');
 
     try {
-<<<<<<< HEAD
       const data = await searchClient(phone, token);
-      const clientsData = Array.isArray(data) ? data : (data?.result || data?.results || []);
-      const clients = Array.isArray(clientsData) ? clientsData : [];
-=======
-      const clients = await searchClient(phone, token);
->>>>>>> 1b77ed7 (fix: use real contragent search)
+      const clients = Array.isArray(data) ? data : (data?.result || data?.results || []);
       if (clients.length > 0) {
         const foundClient = clients[0];
         const clientId = typeof foundClient === 'object' && foundClient !== null && 'id' in foundClient
@@ -172,12 +157,8 @@ export default function OrderForm() {
   };
 
   const handleProductSearch = async (query: string) => {
-<<<<<<< HEAD
     if (!token) return;
     if (!query.trim()) {
-=======
-    if (!query.trim() || !token) {
->>>>>>> 1b77ed7 (fix: use real contragent search)
       setProducts([]);
       return;
     }
