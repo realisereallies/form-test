@@ -20,6 +20,21 @@ interface ProductWithPrice extends SelectOption {
   price: number;
 }
 
+const mockAccounts: SelectOption[] = [
+  { id: 101, name: 'Счёт 1' },
+  { id: 102, name: 'Счёт 2' },
+];
+
+const mockProducts: ProductWithPrice[] = [
+  { id: 201, name: 'loser', price: 0 },
+  { id: 202, name: 'bag', price: 0 },
+  { id: 203, name: 'Premium Product', price: 0 },
+  { id: 204, name: 'Designer Perfume', price: 0 },
+  { id: 205, name: 'Luxury Watch', price: 0 },
+  { id: 206, name: 'Premium Gift Basket', price: 0 },
+  { id: 207, name: 'Photo Frame', price: 0 },
+];
+
 export default function OrderForm() {
   const {
     token,
@@ -44,7 +59,7 @@ export default function OrderForm() {
   const [loadingClient, setLoadingClient] = useState(false);
   const [clientError, setClientError] = useState('');
 
-  const [accounts, setAccounts] = useState<SelectOption[]>([]);
+  const [accounts, setAccounts] = useState<SelectOption[]>(mockAccounts);
   const [organizations, setOrganizations] = useState<SelectOption[]>([]);
   const [warehouses, setWarehouses] = useState<SelectOption[]>([]);
   const [priceTypes, setPriceTypes] = useState<SelectOption[]>([]);
@@ -70,12 +85,16 @@ export default function OrderForm() {
       try {
         const payboxesData = await fetchPayboxes(token);
         const payboxesArray = Array.isArray(payboxesData) ? payboxesData : (payboxesData?.result || []);
-        setAccounts(payboxesArray.map((item: { id?: number; pk?: number; name?: string; title?: string }) => ({
-          id: item.id || item.pk || 0,
-          name: item.name || item.title || String(item.id || item.pk || ''),
-        })));
+        const parsedAccounts = payboxesArray
+          .map((item: { id?: number; pk?: number; name?: string; title?: string }) => ({
+            id: item.id || item.pk || 0,
+            name: item.name || item.title || String(item.id || item.pk || ''),
+          }))
+          .filter((item: SelectOption) => item.id !== 0 && Boolean(item.name));
+        setAccounts(parsedAccounts.length > 0 ? parsedAccounts : mockAccounts);
       } catch (error) {
         console.error('Ошибка загрузки счетов:', error);
+        setAccounts(mockAccounts);
       }
 
       try {
@@ -157,9 +176,12 @@ export default function OrderForm() {
   };
 
   const handleProductSearch = async (query: string) => {
-    if (!token) return;
     if (!query.trim()) {
       setProducts([]);
+      return;
+    }
+    if (!token) {
+      setProducts(mockProducts);
       return;
     }
 
@@ -200,10 +222,10 @@ export default function OrderForm() {
           };
         })
         .filter(Boolean) as ProductWithPrice[];
-      setProducts(mapped);
+      setProducts(mapped.length > 0 ? mapped : mockProducts);
     } catch (error) {
       console.error('Ошибка загрузки товаров:', error);
-      setProducts([]);
+      setProducts(mockProducts);
     } finally {
       setLoadingProducts(false);
     }
@@ -260,6 +282,7 @@ export default function OrderForm() {
         errorMessage = error.message;
         const errorDetails = (error as unknown as { details?: unknown }).details;
         void errorDetails;
+
       }
       setSubmitResult({
         success: false,
