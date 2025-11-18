@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../store/store';
 import {
   searchClient,
   createSale,
+  fetchWarehouses,
+  fetchPayboxes,
+  fetchOrganizations,
+  fetchPriceTypes,
+  fetchNomenclature,
 } from '../utils/api';
 import SelectModal from './SelectModal';
 
@@ -39,27 +44,10 @@ export default function OrderForm() {
   const [loadingClient, setLoadingClient] = useState(false);
   const [clientError, setClientError] = useState('');
 
-  const accounts: SelectOption[] = [
-    { id: 1, name: 'Заказ' },
-    { id: 2, name: 'Чек' },
-    { id: 3, name: 'Возврат' },
-  ];
-
-  const organizations: SelectOption[] = [
-    { id: 207, name: 'Организация 207' },
-    { id: 223, name: 'Организация 223' },
-  ];
-
-  const warehouses: SelectOption[] = [
-    { id: 33, name: 'Склад 33' },
-    { id: 39, name: 'Склад 39' },
-    { id: 50, name: 'Склад 50' },
-  ];
-
-  const priceTypes: SelectOption[] = [
-    { id: 1, name: 'Основная' },
-    { id: 2, name: 'Акционная' },
-  ];
+  const [accounts, setAccounts] = useState<SelectOption[]>([]);
+  const [organizations, setOrganizations] = useState<SelectOption[]>([]);
+  const [warehouses, setWarehouses] = useState<SelectOption[]>([]);
+  const [priceTypes, setPriceTypes] = useState<SelectOption[]>([]);
 
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
@@ -75,6 +63,55 @@ export default function OrderForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  useEffect(() => {
+    if (!token) return;
+
+    const loadData = async () => {
+      try {
+        const payboxesData = await fetchPayboxes(token);
+        const payboxesArray = Array.isArray(payboxesData) ? payboxesData : (payboxesData?.result || []);
+        setAccounts(payboxesArray.map((item: { id?: number; pk?: number; name?: string; title?: string }) => ({
+          id: item.id || item.pk || 0,
+          name: item.name || item.title || String(item.id || item.pk || ''),
+        })));
+      } catch {
+      }
+
+      try {
+        const orgsData = await fetchOrganizations(token);
+        const orgsArray = Array.isArray(orgsData) ? orgsData : (orgsData?.result || []);
+        setOrganizations(orgsArray.map((item: { id?: number; pk?: number; short_name?: string; full_name?: string; name?: string }) => ({
+          id: item.id || item.pk || 0,
+          name: item.short_name || item.full_name || item.name || String(item.id || item.pk || ''),
+        })));
+      } catch {
+      }
+
+      try {
+        const warehousesData = await fetchWarehouses(token);
+        const warehousesArray = Array.isArray(warehousesData) ? warehousesData : (warehousesData?.result || []);
+        setWarehouses(warehousesArray.map((item: { id?: number; pk?: number; name?: string; title?: string }) => ({
+          id: item.id || item.pk || 0,
+          name: item.name || item.title || String(item.id || item.pk || ''),
+        })));
+      } catch {
+      }
+
+      try {
+        const priceTypesData = await fetchPriceTypes(token);
+        const priceTypesArray = Array.isArray(priceTypesData) ? priceTypesData : (priceTypesData?.result || []);
+        setPriceTypes(priceTypesArray.map((item: { id?: number; pk?: number; name?: string; title?: string }) => ({
+          id: item.id || item.pk || 0,
+          name: item.name || item.title || String(item.id || item.pk || ''),
+        })));
+      } catch {
+      }
+
+    };
+
+    loadData();
+  }, [token]);
+
   const handleSearchClient = async () => {
     if (!phone.trim() || !token) return;
 
@@ -83,14 +120,20 @@ export default function OrderForm() {
 
     try {
       const data = await searchClient(phone, token);
-      const clients = Array.isArray(data) ? data : (data ? [data] : []);
+      const clientsData = Array.isArray(data) ? data : (data?.result || data?.results || []);
+      const clients = Array.isArray(clientsData) ? clientsData : [];
       if (clients.length > 0) {
         const foundClient = clients[0];
         const clientId = typeof foundClient === 'object' && foundClient !== null && 'id' in foundClient
           ? Number(foundClient.id)
           : 0;
-        const clientName = typeof foundClient === 'object' && foundClient !== null && 'name' in foundClient
-          ? String(foundClient.name)
+        const clientName = typeof foundClient === 'object' && foundClient !== null
+          ? String(
+              (foundClient as { name?: string; full_name?: string; short_name?: string }).name ||
+                (foundClient as { name?: string; full_name?: string; short_name?: string }).full_name ||
+                (foundClient as { name?: string; full_name?: string; short_name?: string }).short_name ||
+                'Клиент'
+            )
           : 'Клиент';
         if (clientId > 0) {
           setClient({ id: clientId, name: clientName, phone });
@@ -110,14 +153,8 @@ export default function OrderForm() {
     }
   };
 
-  const mockProducts: ProductWithPrice[] = [
-    { id: 1, name: 'Товар 1', price: 1000 },
-    { id: 54987, name: 'Premium Product', price: 840 },
-    { id: 12345, name: 'Товар 2', price: 2000 },
-    { id: 23456, name: 'Товар 3', price: 3000 },
-  ];
-
   const handleProductSearch = async (query: string) => {
+    if (!token) return;
     if (!query.trim()) {
       setProducts([]);
       return;
@@ -125,11 +162,42 @@ export default function OrderForm() {
 
     setLoadingProducts(true);
     try {
-      const searchLower = query.toLowerCase();
-      const filtered = mockProducts.filter((product) =>
-        product.name.toLowerCase().includes(searchLower)
-      );
-      setProducts(filtered);
+      const data = await fetchNomenclature(query, token);
+      const list = Array.isArray(data) ? data : (data?.result || data?.results || []);
+      const mapped: ProductWithPrice[] = list
+        .map((item: {
+          id?: number;
+          pk?: number;
+          name?: string;
+          title?: string;
+          prices?: Array<{ price?: number; price_type?: string | number | null }>;
+        }) => {
+          const itemId = Number(item.id || item.pk || 0);
+          if (!itemId) {
+            return null;
+          }
+          const priceEntry = Array.isArray(item.prices) && item.prices.length > 0
+            ? (() => {
+                if (selectedPriceType) {
+                  const match = item.prices.find((p) =>
+                    p?.price_type &&
+                    (String(p.price_type) === String(selectedPriceType.id) ||
+                      String(p.price_type).toLowerCase() === selectedPriceType.name.toLowerCase())
+                  );
+                  return match || item.prices[0];
+                }
+                return item.prices[0];
+              })()
+            : undefined;
+          const priceValue = priceEntry?.price ?? 0;
+          return {
+            id: itemId,
+            name: item.name || item.title || `Товар ${itemId}`,
+            price: Number(priceValue) || 0,
+          };
+        })
+        .filter(Boolean) as ProductWithPrice[];
+      setProducts(mapped);
     } catch {
       setProducts([]);
     } finally {
@@ -187,9 +255,7 @@ export default function OrderForm() {
       if (error instanceof Error) {
         errorMessage = error.message;
         const errorDetails = (error as unknown as { details?: unknown }).details;
-        if (errorDetails) {
-          console.error('Детали ошибки:', errorDetails);
-        }
+        void errorDetails;
       }
       setSubmitResult({
         success: false,
